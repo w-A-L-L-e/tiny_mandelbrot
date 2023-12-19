@@ -15,108 +15,88 @@ description   : Simple analogue clock
 #include <vector>
 #define _USE_MATH_DEFINES
 #include <math.h>
+using namespace std;
 
-void get_time(int &h, int &m, int &s) {
-  // #include <chrono>
-  // auto tnow = std::chrono::system_clock::now();
-  // std::time_t current_time = std::chrono::system_clock::to_time_t(tnow);
+int mandelbrot(double real, double imag) {
+	int limit = 100;
+	double zReal = real;
+	double zImag = imag;
 
-  // shorter way, just use ctime
-  std::time_t t = std::time(0); // get time now
-  std::tm *now = std::localtime(&t);
-  h = now->tm_hour;
-  m = now->tm_min;
-  s = now->tm_sec;
+	for (int i = 0; i < limit; ++i) {
+		double r2 = zReal * zReal;
+		double i2 = zImag * zImag;
+		
+		if (r2 + i2 > 4.0) return i;
 
-  // std::cout << h << ":" << m << ":" << s << std::endl;
-}
+		zImag = 2.0 * zReal * zImag + imag;
+		zReal = r2 - i2 + real;
+	}
 
-void draw_clock_markers(Screen *scr) {
-  int marker_start = 155;
-  int marker_end = 170;
-
-  // hour ticks
-  for (int hour = 1; hour <= 12; hour++) {
-    double hour_angle = (double)hour * M_PI / 6.0; // 12 hours => 2*PI
-    scr->line(scr->center_x + marker_start * std::cos(hour_angle - M_PI / 2.0),
-              scr->center_y + marker_start * std::sin(hour_angle - M_PI / 2.0),
-              scr->center_x + marker_end * std::cos(hour_angle - M_PI / 2.0),
-              scr->center_y + marker_end * std::sin(hour_angle - M_PI / 2.0));
-
-    // double thickness
-    scr->line(scr->center_x+1 + marker_start * std::cos(hour_angle - M_PI / 2.0),
-              scr->center_y + marker_start * std::sin(hour_angle - M_PI / 2.0),
-              scr->center_x+1 + marker_end * std::cos(hour_angle - M_PI / 2.0),
-              scr->center_y + marker_end * std::sin(hour_angle - M_PI / 2.0));
- 
-    scr->line(scr->center_x + marker_start * std::cos(hour_angle - M_PI / 2.0),
-              scr->center_y+1 + marker_start * std::sin(hour_angle - M_PI / 2.0),
-              scr->center_x + marker_end * std::cos(hour_angle - M_PI / 2.0),
-              scr->center_y+1 + marker_end * std::sin(hour_angle - M_PI / 2.0));
- 
-  }
-
-  marker_start = 165;
-  marker_end = 170;
-  // minute ticks
-  for (int min = 0; min < 60; min++) {
-    double min_angle = (double)min * M_PI / 30.0; // 60 min => 2*PI
-    if(min == 15) continue;
-    scr->line(scr->center_x + marker_start * std::cos(min_angle - M_PI / 2.0),
-              scr->center_y + marker_start * std::sin(min_angle - M_PI / 2.0),
-              scr->center_x + marker_end * std::cos(min_angle - M_PI / 2.0),
-              scr->center_y + marker_end * std::sin(min_angle - M_PI / 2.0));
-  }
-}
-
-void draw_clock_handles(Screen *scr, int hour, int minute, int second) {
-  int sec_len = 160;
-  int min_len = 130;
-  int hour_len = 100;
-
-  double second_angle = (double)second * M_PI / 30.0; // 60 seconds = 2PI
-  double minute_angle = (double)minute * M_PI / 30.0; // 60 minutes = 2PI
-
-  if (hour > 12)
-    hour -= 12; // 12 hour analogue clock
-  double partial_hour = (double)minute / 60.0;
-  double hour_angle =
-      ((double)hour + partial_hour) * M_PI / 6.0; // 12 hours = 2PI
-
-  scr->setColor(40, 40, 240);
-  scr->line(scr->center_x, scr->center_y,
-            scr->center_x + hour_len * std::cos(hour_angle - M_PI / 2.0),
-            scr->center_y + hour_len * std::sin(hour_angle - M_PI / 2.0));
-
-  scr->setColor(40, 240, 40);
-  scr->line(scr->center_x, scr->center_y,
-            scr->center_x + min_len * std::cos(minute_angle - M_PI / 2.0),
-            scr->center_y + min_len * std::sin(minute_angle - M_PI / 2.0));
-
-  scr->setColor(240, 40, 40);
-  scr->line(scr->center_x, scr->center_y,
-            scr->center_x + sec_len * std::cos(second_angle - M_PI / 2.0),
-            scr->center_y + sec_len * std::sin(second_angle - M_PI / 2.0));
+	return limit;
 }
 
 int main(int argc, char **argv) {
-  Screen screen(640, 400, "analogue clock", false);
-  int hour, minute, second;
+  int width = 640;
+  int height = 400;
 
+  Screen screen(width, height, "Mandelbrot set", false);
   SDL_ShowCursor(SDL_DISABLE);
+
+  double x_start = -2.0;
+	double x_fin = 1.0;
+	double y_start = -1.0;
+	double y_fin = 1.0;
+	
+	double dx = (x_fin - x_start)/(width - 1);
+	double dy = (y_fin - y_start)/(height - 1);
+
+  double animate = 1.0;
 
   while (screen.opened()) {
     screen.handle_events();
-    //screen.clear(0, 0, 80);
-    screen.clear(); //is a little faster
+    screen.clear();
 
-    get_time(hour, minute, second);
+    // little hack to cycle the colors
+    animate += 0.1;
+    if (animate > 3.5) animate = 0.8;
 
-    screen.setColor(230, 210, 90);
-    draw_clock_markers(&screen);
-    draw_clock_handles(&screen, hour, minute, second);
+    // TODO: make start pos and end pos changeable with keyboard
+    // double x_start = -0.25;
+	  // double x_fin = 0.05;
+	  // double y_start = -0.95;
+	  // double y_fin = -0.75;
+	
+	  // double x_start = -0.13;
+	  // double x_fin = -0.085;
+	  // double y_start = -0.91;
+	  // double y_fin = -0.88;
 
-    // SDL_Delay(20); // use this to slow down
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        
+        double x = x_start + j*dx; // current real value
+        double y = y_fin - i*dy; // current imaginary value
+        
+        int value = mandelbrot(x,y) * animate;
+        
+        if (value == 100)    { screen.pixel(j,i,0,0,0); }      // black
+        else if (value > 90) { screen.pixel(j,i,50,0,0); }     // dark red
+        else if (value > 70) { screen.pixel(j,i,255,20,20); }  // light red
+        else if (value > 50) { screen.pixel(j,i,200,100,10); } // orange
+        else if (value > 30) { screen.pixel(j,i,240,236,0); }  // yellow
+        else if (value > 20) { screen.pixel(j,i,57,240,6); }   // light green
+        else if (value > 10) { screen.pixel(j,i,10,140,10); }  // green
+        else if (value > 5)  { screen.pixel(j,i,8,230,230); }  // light cyan
+        else if (value > 4)  { screen.pixel(j,i,0,120,120); }  // cyan
+        else if (value > 3)  { screen.pixel(j,i,8,140,250); }  // light blue
+        else if (value > 2)  { screen.pixel(j,i,10,10,250); }  // blue
+        else if (value > 1)  { screen.pixel(j,i,120,4,140); }  // magenta
+        else                 { screen.pixel(j,i,195,8,227); }  // light magenta
+      }
+    }
+
+    // sleep a little
+    SDL_Delay(20);
     screen.draw();
   }
 
