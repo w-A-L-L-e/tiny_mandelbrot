@@ -51,14 +51,18 @@ int main(int argc, char **argv) {
 	double dy = (y_fin - y_start)/(height - 1);
 
   double animate = 1.0;
+  double animpos = 0.0;
+
+  screen.setFullscreen(true);
 
   while (screen.opened()) {
     screen.handle_events();
     screen.clear();
 
     // little hack to cycle the colors
-    animate += 0.1;
-    if (animate > 3.5) animate = 0.8;
+    animpos += 0.15;
+    if (animpos > 3.1414) animpos = 0.0;
+    animate = 2.0 + 2.0 * sin(animpos);
 
     // TODO: make start pos and end pos changeable with keyboard
     // double x_start = -0.25;
